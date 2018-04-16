@@ -1,72 +1,94 @@
-from flask import Flask, request, redirect, render_template
+from flask import Flask, request, redirect, render_template, flash
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://build-a-blog:league12@localhost:8889/build-a-blog'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://build-a-blog1:League12@localhost:8889/build-a-blog1'
 app.config['SQLALCHEMY_ECHO'] = True
 db = SQLAlchemy(app)
+app.secret_key = 'ljkng9324hgbioBV(*IYGWBfbn0e4gb'
 
 
 
 
-
-class Blog(db.Model):
+#Blogs
+class Entry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(180))
     body = db.Column(db.String(1000))
-    title = db.Column(db.String(120))
+    created = db.Column(db.DateTime)
 
-    def __init__(self, body, title):
-        self.body = body
+    def __init__(self, title, body ):
         self.title = title
+        self.body = body
+        self.created = datetime.utcnow()
 
-class Task(db.Model):
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120))
-    completed = db.Column(db.Boolean)
-
-    def __init__(self, name):
-        self.name = name
-        self.completed = False
-
-
-
-@app.route('/blog', methods=['POST', 'GET'])
-def blog():
-
-    if request.method == 'POST':
-        blogs = Blog.query.all
-        return render_template('blog.html')
+    
+    def is_valid(self):
+        if self.title and self.body and self.created:
+            return True
+        else:
+            return False
 
 
 
-@app.route('/', methods=['POST', 'GET'])
+
+
+#Main
+@app.route("/")
 def index():
 
+    return redirect("/blog")
+
+
+
+
+
+@app.route("/blog")
+def all_blog_entries():
+
+    entry_id = request.args.get('id')
+    if (entry_id):
+        entry = Entry.query.get(entry_id)
+        return render_template('single_entry.html', title="Blog Entry", entry=entry)
+
+
+    sort = request.args.get('sort')
+    if (sort=="newest"):
+        all_entries = Entry.query.order_by(Entry.created.desc()).all()
+    else:
+        all_entries = Entry.query.all()   
+    return render_template('all_entries.html', title="All Entries", all_entries=all_entries)
+
+
+
+
+
+@app.route('/new_entry', methods=['GET', 'POST'])
+def new_entry():
+
     if request.method == 'POST':
-        task_name = request.form['task']
-        new_task = Task(task_name)
-        db.session.add(new_task)
-        db.session.commit()
+        new_entry_title = request.form['title']
+        new_entry_body = request.form['body']
+        new_entry = Entry(new_entry_title, new_entry_body)
 
-    tasks = Task.query.filter_by(completed=False).all()
-    completed_tasks = Task.query.filter_by(completed=True).all()
-    return render_template('todos.html',title="Get It Done!", 
-        tasks=tasks, completed_tasks=completed_tasks)
+        if new_entry.is_valid():
+            db.session.add(new_entry)
+            db.session.commit()
 
+            
+            url = "/blog?id=" + str(new_entry.id)
+            return redirect(url)
+        else:
+            flash("A title and a body are required.")
+            return render_template('new_entry_form.html',
+                title="Create new blog entry",
+                new_entry_title=new_entry_title,
+                new_entry_body=new_entry_body)
 
-@app.route('/delete-task', methods=['POST'])
-def delete_task():
-
-    task_id = int(request.form['task-id'])
-    task = Task.query.get(task_id)
-    task.completed = True
-    db.session.add(task)
-    db.session.commit()
-
-    return redirect('/')
-
-
+    else: # GET request
+        return render_template('new_entry_form.html', title="Create new blog entry")
+#
 if __name__ == '__main__':
     app.run()
