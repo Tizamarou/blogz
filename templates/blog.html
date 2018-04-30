@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {% if user %}
+        <p><h1> Posts by {{user.username}} </h1></p>
+    {% endif %}
+
+
+    {% for post in posts %}
+    <div>
+        <h2><a href='/blog?id={{post.post_id}}'>{{post.name}}</a></h2>
+        <p>{{post.content}}</p>
+        <small><i> Written by <a href='/blog?userID={{post.owner.user_id}}'>{{post.owner.username}}</a></i></small>
+
+    </div>
+    {% endfor %}
+
+{% endblock %}

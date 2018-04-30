@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <form method='POST'>
+<br/>
+        <table>
+        <tr><label>
+            Post Title: </tr>
+            <tr><input type="text" name='name' /></tr>
+        </label> </table>
+        <table>
+<br/>
+        <label>
+            <tr>Post Content:</tr>
+            <tr> <input type="text" name='content' /></tr>
+        </label>
+<br/>
+        <tr><input type="submit" value='post' /></tr>
+        </table>
+    </form>
+
+{% endblock %}
